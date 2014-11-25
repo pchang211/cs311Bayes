@@ -247,7 +247,7 @@ public class SpamFilter {
 	 */
 	public Label classify(String file, Set<String> featureSet)
 	{
-		double prob = 1;
+		double prob = 0;
 		HashSet<String> features;
 		try {
 			Scanner scan = new Scanner(new File(getPath(file)));
@@ -264,21 +264,21 @@ public class SpamFilter {
 		}
 		
 		for (String f : features) {
-			FeatureLabelPair pair = new FeatureLabelPair(f, Label.SPAM);
-			if (counts.containsKey(pair)) {
-				prob *= counts.get(pair)/priors.get(Label.SPAM);
+			FeatureLabelPair spamPair = new FeatureLabelPair(f, Label.SPAM);
+			if (counts.containsKey(spamPair)) {
+				prob += Math.log(counts.get(spamPair)/priors.get(Label.SPAM));
 			}
 		}
-		prob *= priors.get(Label.SPAM)/TRAIN_SIZE;
+		prob += Math.log(priors.get(Label.SPAM)/TRAIN_SIZE);
 		
-		if (prob > DELTA) {
+		if (prob > Math.log(DELTA)) {
 			System.out.println(file + ", prob: " + prob + ", " + Label.SPAM);
 			return Label.SPAM;
 		}
 		System.out.println(file + ", prob: " + prob + ", " + Label.HAM);
 		return Label.HAM;
 	}
-
+	
 	public void evaluate(Set<String> featureSet) {
 		double accuracy = 0;
 		double spamCount = 0;
