@@ -58,6 +58,10 @@ public class SpamFilter {
 		counts = new HashMap<FeatureLabelPair, Double>();
 	}
 
+	/**
+	 * static driver for calibrating delta and lambda values
+	 * @throws IOException
+	 */
 	public static void experiment() throws IOException {
 		SpamFilter spamFilter = new SpamFilter();
 		spamFilter.split();
@@ -213,12 +217,22 @@ public class SpamFilter {
 		}
 	}
 	
+	/**
+	 * returns the full path of input file, based on its label
+	 * @param file
+	 * @return
+	 */
 	private String getPath(String file) {
 		Label label = getLabel(file);
 		String path = (label==Label.SPAM) ? spamfolder+"/"+file : hamfolder+"/"+file;
 		return path;
 	}
 	
+	/**
+	 * count the number of labels and feature/label pairs
+	 * @param file
+	 * @param featureSet
+	 */
 	private void generateCounts(String file, Set<String> featureSet) {
 		Scanner scan;
 		try {
@@ -245,6 +259,12 @@ public class SpamFilter {
 		
 	}
 	
+	/**
+	 * Extracts the features from a file given a feature set and file name
+	 * @param file
+	 * @param featureSet
+	 * @return features
+	 */
 	private HashSet<String> getFeatures(String file, Set<String> featureSet) {
 		try {
 			Scanner scan = new Scanner(new File(getPath(file)));
@@ -260,7 +280,6 @@ public class SpamFilter {
 			e.printStackTrace();
 			return null;
 		}
-		
 	}
 	
 	/*
@@ -286,11 +305,23 @@ public class SpamFilter {
 		return Label.HAM;
 	}
 	
+	/**
+	 * helper method for printing labels
+	 * @param label
+	 * @return
+	 */
 	private static int labelToInt(Label label) {
 		if (label.equals(Label.SPAM)) return 1;
 		else return 0;
 	}
 	
+	/**
+	 * evaluates this predictor given delta and lambda values on total accuracy and false positives/negatives
+	 * @param featureSet
+	 * @param delta
+	 * @param lambda
+	 * @return total accuracy
+	 */
 	public double evaluate(Set<String> featureSet, double delta, double lambda) {
 		this.delta = delta;
 		this.lambda = lambda;
