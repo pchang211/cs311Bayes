@@ -183,18 +183,27 @@ public class SpamFilter {
 	 * Trainer: Reads email messages and computes probabilities for the Bayesian formula.
 	 * You may modify the method header (return type, parameters) as you see fit.
 	 */
-	public void train(Set featureSet)
+	public void train(Set<String> featureSet)
 	{
-//		System.out.println("train set size: " + trainSet.size());
+		initializeCounts(featureSet);
 		for (String file : trainSet) {
 			if (!file.contains(".DS_Store")) generateCounts(file, featureSet);
-		}
-		
-//		for (FeatureLabelPair p : counts.keySet()) {
-//			System.out.println(p.feature +", " + p.label + " => " + counts.get(p));
-//		}
+		}	
 	}
 
+	/**
+	 * Initializes all label and feature/label counts to 0
+	 * @param featureSet
+	 */
+	private void initializeCounts(Set<String> featureSet) {
+		priors.put(Label.SPAM, 0.0);
+		priors.put(Label.HAM, 0.0);
+		for (String f : featureSet) {
+			counts.put(new FeatureLabelPair(f, Label.SPAM), 0.0);
+			counts.put(new FeatureLabelPair(f, Label.HAM), 0.0);
+		}
+	}
+	
 	private String getPath(String file) {
 		Label label = getLabel(file);
 		String path = (label==Label.SPAM) ? spamfolder+"/"+file : hamfolder+"/"+file;
@@ -206,32 +215,19 @@ public class SpamFilter {
 		try {
 			Label label = getLabel(file);
 			String path = getPath(file);
-//			String path = "spamdata/testing/" + file;
 			scan = new Scanner(new File(path));
 
 			/* increment priors */
-			if (priors.containsKey(label)) {
-				priors.put(label, priors.get(label) + 1);
-			}
-			else {
-				priors.put(label, 1.0);
-			}
+			priors.put(label, priors.get(label) + 1);
 			
 			String current;
 			while(scan.hasNext()) {
 				current = scan.next();
 				if (featureSet.contains(current)) {
 					FeatureLabelPair pair = new FeatureLabelPair(current, label);
-					
 					/* increment counts */
-					if (counts.containsKey(pair)) {
-						counts.put(pair, counts.get(pair)+1);
-					}
-					else {
-						counts.put(pair, 1.0);
-					}
+					counts.put(pair, counts.get(pair)+1);
 				}
-				
 			}
 			scan.close();
 		} catch (FileNotFoundException e) {
@@ -265,9 +261,7 @@ public class SpamFilter {
 		
 		for (String f : features) {
 			FeatureLabelPair spamPair = new FeatureLabelPair(f, Label.SPAM);
-			if (counts.containsKey(spamPair)) {
-				prob += Math.log(counts.get(spamPair)/priors.get(Label.SPAM));
-			}
+			prob += Math.log(counts.get(spamPair)/priors.get(Label.SPAM));
 		}
 		prob += Math.log(priors.get(Label.SPAM)/TRAIN_SIZE);
 		
@@ -279,20 +273,20 @@ public class SpamFilter {
 		return Label.HAM;
 	}
 	
-	public void evaluate(Set<String> featureSet) {
+	public double evaluate(Set<String> featureSet) {
 		double accuracy = 0;
 		double spamCount = 0;
 		for (String file : testSet) {
 			Label label = getLabel(file);
 			if (label == classify(file, featureSet)) accuracy++;
-			if (label.equals(Label.SPAM)) {
-				spamCount ++;
-			}
+			if (label.equals(Label.SPAM)) spamCount ++;
 			
 		}
 //		System.out.println("log DELTA = " + Math.log(DELTA));
 		System.out.println("accuracy: " + accuracy/testSet.size());
 		System.out.println("prior probability: " + (1 - spamCount/testSet.size()));
+		
+		return accuracy/testSet.size();
 	}
 	
 }
