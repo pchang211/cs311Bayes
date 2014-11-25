@@ -14,7 +14,12 @@ public class SpamFilter {
 	
 	
 	final static int TRAIN_SIZE = 3000;
-	final static double DELTA = .0001;
+	final static double DELTA = .000001;
+	final static double LAMBDA = .000001;
+	
+	
+	private double delta ;// = .0001;
+	private double lambda; // = .003;
 	
 	private Set<String> trainSet;
 	private Set<String> testSet;
@@ -31,31 +36,40 @@ public class SpamFilter {
 //		System.out.println("How many messages to classify?");
 		
 //		int nummsgs = Integer.parseInt(scan.nextLine());
-		System.out.println("Classifying 1000 random messages...");
+//		System.out.println("Classifying 1000 random messages...");
 		
 		SpamFilter spamFilter = new SpamFilter();
 		spamFilter.split();
 		
-		Set featureSet = preprocess();
+		Set<String> featureSet = preprocess();
 		spamFilter.train(featureSet);
 		
-		spamFilter.evaluate(featureSet);
+//		double maxAccuracy = 0;
+//		double maxLambda = -1;
+//		double maxDelta = -1;
+//		for (double delta = .000000001; delta < .00001; delta+= .0000001) {
+		spamFilter.evaluate(featureSet, DELTA, LAMBDA);
+//			double lambda = .003;
+//			for (double lambda = .000001; lambda < .001; lambda += .00005) {
+//				double accuracy = spamFilter.evaluate(featureSet, delta, lambda);
+//				if (accuracy > maxAccuracy) {
+//					maxAccuracy = accuracy;
+//					maxDelta = delta;
+//					maxLambda = lambda;
+//				}
+//			}
 		
+//		System.out.println("MAX DELTA: " + maxDelta + ", MAX LAMBDA: " + maxLambda + ", MAX ACCURACY: " + maxAccuracy);
 		
-//		System.out.println(spamFilter.priors.get(Label.SPAM));
-//		for (String s : spamFilter.trainSet) {
-//			System.out.println(s);
-//		}
-		
-        System.out.println("all messages:");
+//        System.out.println("all messages:");
 //		readFiles(allfolder);
-		System.out.println();
+//		System.out.println();
 		
-		System.out.println("spam messages:");
+//		System.out.println("spam messages:");
 //		readFiles(spamfolder);
-		System.out.println();
+//		System.out.println();
 		
-		System.out.println("ham messages:");
+//		System.out.println("ham messages:");
 //		readFiles(hamfolder);
 		
 		
@@ -259,34 +273,53 @@ public class SpamFilter {
 			return null;
 		}
 		
+		int numFeatures = featureSet.size();
 		for (String f : features) {
 			FeatureLabelPair spamPair = new FeatureLabelPair(f, Label.SPAM);
-			prob += Math.log(counts.get(spamPair)/priors.get(Label.SPAM));
+			prob += Math.log(
+					(counts.get(spamPair) + lambda)/
+					(priors.get(Label.SPAM) + numFeatures*lambda)
+					);
 		}
 		prob += Math.log(priors.get(Label.SPAM)/TRAIN_SIZE);
 		
-		if (prob > Math.log(DELTA)) {
-			System.out.println(file + ", prob: " + prob + ", " + Label.SPAM);
-			return Label.SPAM;
-		}
-		System.out.println(file + ", prob: " + prob + ", " + Label.HAM);
+		if (prob > Math.log(delta)) return Label.SPAM;
 		return Label.HAM;
 	}
 	
-	public double evaluate(Set<String> featureSet) {
-		double accuracy = 0;
-		double spamCount = 0;
+	public static int labelToInt(Label label) {
+		if (label.equals(Label.SPAM)) return 1;
+		else return 0;
+	}
+	
+	public double evaluate(Set<String> featureSet, double delta, double lambda) {
+		this.delta = delta;
+		this.lambda = lambda;
+		
+		double correct = 0;
+		double falsePos = 0;
+		double falseNeg = 0;
 		for (String file : testSet) {
 			Label label = getLabel(file);
-			if (label == classify(file, featureSet)) accuracy++;
-			if (label.equals(Label.SPAM)) spamCount ++;
+			Label prediction = classify(file, featureSet);
+			System.out.println(file + " " + labelToInt(prediction));
 			
+			if (label.equals(Label.HAM)) {
+				if (prediction.equals(Label.SPAM)) falsePos++;
+				else correct++;
+			}
+			// the example is spam
+			else {
+				if (prediction.equals(Label.HAM)) falseNeg++; 
+				else correct++;
+			}			
 		}
-//		System.out.println("log DELTA = " + Math.log(DELTA));
-		System.out.println("accuracy: " + accuracy/testSet.size());
-		System.out.println("prior probability: " + (1 - spamCount/testSet.size()));
 		
-		return accuracy/testSet.size();
+		System.out.println("delta: " + delta + ", lambda: " + lambda + ", overall accuracy: " + correct/testSet.size());
+		System.out.println("false positives: " + falsePos/testSet.size());
+		System.out.println("false negatives: " + falseNeg/testSet.size());
+		
+		return correct/testSet.size();
 	}
 	
 }
