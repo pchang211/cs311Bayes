@@ -245,6 +245,24 @@ public class SpamFilter {
 		
 	}
 	
+	private HashSet<String> getFeatures(String file, Set<String> featureSet) {
+		try {
+			Scanner scan = new Scanner(new File(getPath(file)));
+			HashSet<String> features = new HashSet<String>();
+			String word;
+			while (scan.hasNext()) {
+				word = scan.next();
+				if (featureSet.contains(word)) features.add(word);
+			}
+			scan.close();
+			return features;
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
+	
 	/*
 	 * TO DO
 	 * Classifier: Reads and classifies an email message as either spam or ham.
@@ -253,21 +271,7 @@ public class SpamFilter {
 	public Label classify(String file, Set<String> featureSet)
 	{
 		double prob = 0;
-		HashSet<String> features;
-		try {
-			Scanner scan = new Scanner(new File(getPath(file)));
-			features = new HashSet<String>();
-			String word;
-			while (scan.hasNext()) {
-				word = scan.next();
-				if (featureSet.contains(word)) features.add(word);
-			}
-			scan.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return null;
-		}
-		
+		HashSet<String> features = getFeatures(file, featureSet);
 		int numFeatures = featureSet.size();
 		for (String f : features) {
 			FeatureLabelPair spamPair = new FeatureLabelPair(f, Label.SPAM);
