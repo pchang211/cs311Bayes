@@ -30,7 +30,7 @@ public class SpamFilter {
 	public static void main(String[] args) throws IOException
 	{		
 		
-		Scanner scan = new Scanner(System.in);
+//		Scanner scan = new Scanner(System.in);
 //		BufferedWriter out = new BufferedWriter(new FileWriter("output.txt")); 
 		
 //		System.out.println("How many messages to classify?");
@@ -44,35 +44,7 @@ public class SpamFilter {
 		Set<String> featureSet = preprocess();
 		spamFilter.train(featureSet);
 		
-//		double maxAccuracy = 0;
-//		double maxLambda = -1;
-//		double maxDelta = -1;
-//		for (double delta = .000000001; delta < .00001; delta+= .0000001) {
 		spamFilter.evaluate(featureSet, DELTA, LAMBDA);
-//			double lambda = .003;
-//			for (double lambda = .000001; lambda < .001; lambda += .00005) {
-//				double accuracy = spamFilter.evaluate(featureSet, delta, lambda);
-//				if (accuracy > maxAccuracy) {
-//					maxAccuracy = accuracy;
-//					maxDelta = delta;
-//					maxLambda = lambda;
-//				}
-//			}
-		
-//		System.out.println("MAX DELTA: " + maxDelta + ", MAX LAMBDA: " + maxLambda + ", MAX ACCURACY: " + maxAccuracy);
-		
-//        System.out.println("all messages:");
-//		readFiles(allfolder);
-//		System.out.println();
-		
-//		System.out.println("spam messages:");
-//		readFiles(spamfolder);
-//		System.out.println();
-		
-//		System.out.println("ham messages:");
-//		readFiles(hamfolder);
-		
-		
 		
 //		out.close();
 		
@@ -80,14 +52,36 @@ public class SpamFilter {
 	
 	public SpamFilter() {
 		trainSet = new HashSet<String>();
-//		trainSet.add("file1.spam.txt");
-//		trainSet.add("file2.ham.txt");
 		testSet = new HashSet<String>();
 		
 		priors = new HashMap<Label, Double>();
 		counts = new HashMap<FeatureLabelPair, Double>();
 	}
 
+	public static void experiment() throws IOException {
+		SpamFilter spamFilter = new SpamFilter();
+		spamFilter.split();
+		
+		Set<String> featureSet = preprocess();
+		spamFilter.train(featureSet);
+		
+		double maxAccuracy = 0;
+		double maxLambda = -1;
+		double maxDelta = -1;
+		for (double delta = .000000001; delta < .00001; delta+= .0000001) {
+			for (double lambda = .000001; lambda < .001; lambda += .00005) {
+				double accuracy = spamFilter.evaluate(featureSet, delta, lambda);
+				if (accuracy > maxAccuracy) {
+					maxAccuracy = accuracy;
+					maxDelta = delta;
+					maxLambda = lambda;
+				}
+			}
+		}
+		
+		System.out.println("MAX DELTA: " + maxDelta + ", MAX LAMBDA: " + maxLambda + ", MAX ACCURACY: " + maxAccuracy);
+	}
+	
 	/*
 	 * Takes as parameter the name of a folder and returns a list of filenames (Strings) 
 	 * in the folder.
@@ -121,6 +115,7 @@ public class SpamFilter {
 	    }
 	}
 
+	
 	/**
 	 * Splits data into train and test sets
 	 */
@@ -287,7 +282,7 @@ public class SpamFilter {
 		return Label.HAM;
 	}
 	
-	public static int labelToInt(Label label) {
+	private static int labelToInt(Label label) {
 		if (label.equals(Label.SPAM)) return 1;
 		else return 0;
 	}
